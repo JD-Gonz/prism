@@ -19,7 +19,7 @@
  * - Session tokens validated against Redis store
  * - Session tokens are httpOnly cookies (not accessible to JS)
  * - Short session expiry for children
- * - Only guests can login without a PIN
+ * - Users can login without a PIN if no PIN is configured
  *
  */
 
@@ -162,20 +162,9 @@ export async function POST(request: NextRequest) {
 
     const role = user.role as 'parent' | 'child' | 'guest';
 
-    // SECURITY FIX: Only guests can login without a PIN
-    // Parents and children MUST have a PIN set
+    // If the account has no PIN configured, allow login without PIN.
     if (!user.pin) {
-      if (role !== 'guest') {
-        return NextResponse.json(
-          {
-            error: 'PIN not set. Please contact a parent to set your PIN.',
-            pinRequired: true,
-          },
-          { status: 403 }
-        );
-      }
-
-      // Guest login (no PIN required)
+      // No-PIN login
       const session = await createSession(user.id, role, {
         userAgent: request.headers.get('user-agent') || undefined,
         ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined,
@@ -211,7 +200,7 @@ export async function POST(request: NextRequest) {
         userId: user.id,
         action: 'login',
         entityType: 'session',
-        summary: `Logged in as guest: ${user.name}`,
+        summary: `Logged in (no PIN): ${user.name}`,
       });
 
       return NextResponse.json({
@@ -223,7 +212,7 @@ export async function POST(request: NextRequest) {
           avatarUrl: user.avatarUrl,
         },
         expiresAt: session.expiresAt.toISOString(),
-        message: 'Logged in as guest',
+        message: 'Logged in without PIN',
       });
     }
 

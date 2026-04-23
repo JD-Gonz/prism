@@ -24,6 +24,7 @@ export interface MemberModalSaveData {
   name: string;
   role: 'parent' | 'child' | 'guest';
   color: string;
+  pin?: string;
   avatarUrl?: string | null;
   avatarFile?: File | null;
 }
@@ -40,6 +41,7 @@ export function MemberModal({
   const [name, setName] = useState(member?.name || '');
   const [role, setRole] = useState<'parent' | 'child' | 'guest'>(member?.role || 'child');
   const [color, setColor] = useState(member?.color || colorOptions[0] || '#3B82F6');
+  const [pin, setPin] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(member?.avatarUrl || null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -90,10 +92,15 @@ export function MemberModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
+    if (!member && pin && !/^\d{4,6}$/.test(pin)) {
+      toast({ title: 'PIN must be 4-6 digits.', variant: 'warning' });
+      return;
+    }
     onSave({
       name: name.trim(),
       role,
       color,
+      pin: !member && pin ? pin : undefined,
       avatarUrl: avatarFile ? null : avatarUrl,
       avatarFile,
     });
@@ -233,6 +240,24 @@ export function MemberModal({
               ))}
             </div>
           </div>
+
+          {!member && (
+            <div>
+              <label className="text-sm font-medium">PIN (optional)</label>
+              <Input
+                type="password"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={pin}
+                onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                placeholder="4-6 digits"
+                maxLength={6}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Leave blank to allow login without a PIN.
+              </p>
+            </div>
+          )}
 
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={onClose}>

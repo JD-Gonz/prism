@@ -37,6 +37,7 @@ export interface QuickPinMember {
   color: string;
   avatarUrl?: string;
   role: 'parent' | 'child' | 'guest';
+  hasPin?: boolean;
 }
 
 /**
@@ -80,6 +81,7 @@ export function QuickPinModal({
     color: m.color,
     avatarUrl: m.avatarUrl ?? undefined,
     role: m.role as 'parent' | 'child' | 'guest',
+    hasPin: m.hasPin,
   }));
 
   // Selected member
@@ -147,7 +149,7 @@ export function QuickPinModal({
   useEffect(() => {
     if (pin.length !== pinLength || !selectedMember) return;
 
-    const verifyPin = async () => {
+    const authenticate = async () => {
       setIsVerifying(true);
       const enteredPin = pin.join('');
 
@@ -193,8 +195,49 @@ export function QuickPinModal({
       }
     };
 
-    verifyPin();
+    authenticate();
   }, [pin, selectedMember, onAuthenticated, onOpenChange]);
+
+  const authenticateWithoutPin = useCallback(async (member: QuickPinMember) => {
+    setIsVerifying(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...(member.id ? { userId: member.id } : { memberIndex: member.loginIndex }),
+        }),
+      });
+
+      if (!response.ok) {
+        setError('Authentication failed');
+        setIsShaking(true);
+        setTimeout(() => setIsShaking(false), 500);
+        return;
+      }
+
+      const data = await response.json();
+      const authenticatedMember: QuickPinMember = {
+        id: data.user.id,
+        name: data.user.name,
+        role: data.user.role as 'parent' | 'child' | 'guest',
+        color: data.user.color,
+        avatarUrl: data.user.avatarUrl ?? undefined,
+        loginIndex: member.loginIndex,
+        hasPin: false,
+      };
+      onAuthenticated(authenticatedMember);
+      onOpenChange(false);
+      window.dispatchEvent(new Event('prism:auth-changed'));
+    } catch {
+      setError('Authentication failed');
+      setIsShaking(true);
+      setTimeout(() => setIsShaking(false), 500);
+    } finally {
+      setIsVerifying(false);
+    }
+  }, [onAuthenticated, onOpenChange]);
 
   if (!open) return null;
 
@@ -347,7 +390,13 @@ export function QuickPinModal({
                 {members.map((member) => (
                   <button
                     key={member.id || member.loginIndex}
-                    onClick={() => setSelectedMember(member)}
+                    onClick={() => {
+                      if (member.hasPin === false) {
+                        void authenticateWithoutPin(member);
+                        return;
+                      }
+                      setSelectedMember(member);
+                    }}
                     className={cn(
                       'flex flex-col items-center p-3 rounded-xl',
                       'hover:bg-accent/50 active:bg-accent transition-colors',
