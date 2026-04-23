@@ -23,6 +23,8 @@ import { useOrientation } from '@/lib/hooks/useOrientation';
 import { useWeekStartsOn } from '@/lib/hooks/useWeekStartsOn';
 import type { CalendarEvent } from '@/types/calendar';
 import { seasonalPalettes } from '@/lib/themes/seasonalThemes';
+import { timedEventListTextColor } from '@/lib/utils/color';
+import { useTheme } from '@/components/providers/ThemeProvider';
 
 // Get the accent color for a month (1-12)
 function getMonthColor(month: Date): string {
@@ -56,6 +58,7 @@ function MiniMonth({
   isCenter: boolean;
   bordered?: boolean;
 }) {
+  const { resolvedTheme } = useTheme();
   const { weekStartsOn } = useWeekStartsOn();
   const dayNames = [...ALL_DAY_NAMES.slice(weekStartsOn), ...ALL_DAY_NAMES.slice(0, weekStartsOn)];
   const bgOverride = useWidgetBgOverride();
@@ -153,7 +156,7 @@ function MiniMonth({
                           className="text-[8px] leading-tight px-0.5 rounded truncate cursor-pointer hover:opacity-80 hover:ring-1 hover:ring-seasonal-accent/50 transition-all"
                           style={event.allDay
                             ? { backgroundColor: event.color + '20', borderLeft: `2px solid ${event.color}` }
-                            : { color: event.color }
+                            : { color: timedEventListTextColor(event.color, resolvedTheme === 'dark') }
                           }
                         >
                           {event.allDay ? event.title : `• ${event.title}`}

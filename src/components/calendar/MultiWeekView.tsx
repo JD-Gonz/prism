@@ -11,7 +11,8 @@ import {
 } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useWidgetBgOverride } from '@/components/widgets/WidgetContainer';
-import { hexToRgba } from '@/lib/utils/color';
+import { hexToRgba, timedEventListTextColor } from '@/lib/utils/color';
+import { useTheme } from '@/components/providers/ThemeProvider';
 import { useWeekStartsOn } from '@/lib/hooks/useWeekStartsOn';
 import { DAYS_SHORT_ARRAY } from '@/lib/constants/days';
 import type { CalendarEvent } from '@/types/calendar';
@@ -104,6 +105,7 @@ function DayCell({
   bordered: boolean;
   cellBgStyle?: React.CSSProperties;
 }) {
+  const { resolvedTheme } = useTheme();
   const dayStart = startOfDay(date);
   const dayEvents = events.filter((event) =>
     event.allDay
@@ -170,7 +172,7 @@ function DayCell({
             )}
             style={event.allDay
               ? { backgroundColor: event.color, color: '#fff', borderLeft: `2px solid ${event.color}` }
-              : { color: event.color }
+              : { color: timedEventListTextColor(event.color, resolvedTheme === 'dark') }
             }
           >
             {event.allDay ? event.title : `${format(event.startTime, 'h:mm')} ${event.title}`}

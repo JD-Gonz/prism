@@ -1,4 +1,4 @@
-import { isLightColor } from '../color';
+import { isLightColor, timedEventListTextColor, normalizeHexColor } from '../color';
 
 describe('isLightColor', () => {
   // --- Clearly light colors ---
@@ -76,5 +76,32 @@ describe('isLightColor', () => {
 
   it('handles mixed case hex', () => {
     expect(isLightColor('#FfFfFf')).toBe(true);
+  });
+});
+
+describe('normalizeHexColor', () => {
+  it('expands 3-digit hex', () => {
+    expect(normalizeHexColor('#f00')).toBe('#ff0000');
+  });
+
+  it('uses fallback for invalid input', () => {
+    expect(normalizeHexColor('not-a-color')).toBe('#3B82F6');
+  });
+});
+
+describe('timedEventListTextColor', () => {
+  it('returns accent unchanged in light mode', () => {
+    expect(timedEventListTextColor('#1a73e8', false)).toBe('#1a73e8');
+  });
+
+  it('lightens dark blues in dark mode for contrast', () => {
+    const adjusted = timedEventListTextColor('#00008b', true);
+    expect(adjusted).not.toBe('#00008b');
+    expect(adjusted.startsWith('#')).toBe(true);
+  });
+
+  it('leaves already-light accents in dark mode', () => {
+    const light = '#93C5FD';
+    expect(timedEventListTextColor(light, true)).toBe(light.toLowerCase());
   });
 });

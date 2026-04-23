@@ -13,6 +13,8 @@ import {
 import { cn } from '@/lib/utils';
 import { DAYS_SHORT_ARRAY } from '@/lib/constants/days';
 import { useWidgetBgOverride } from '@/components/widgets/WidgetContainer';
+import { timedEventListTextColor } from '@/lib/utils/color';
+import { useTheme } from '@/components/providers/ThemeProvider';
 import { useOrientation } from '@/lib/hooks/useOrientation';
 import type { CalendarEvent } from '@/types/calendar';
 
@@ -27,6 +29,7 @@ export function TwoWeekView({
   events,
   onEventClick,
 }: TwoWeekViewProps) {
+  const { resolvedTheme } = useTheme();
   const bgOverride = useWidgetBgOverride();
   const transparentMode = bgOverride?.hasCustomBg === true;
   const weekStart = startOfWeek(currentDate);
@@ -93,7 +96,7 @@ export function TwoWeekView({
               )}
               style={event.allDay
                 ? { backgroundColor: event.color + '20', borderLeft: `2px solid ${event.color}` }
-                : { color: event.color }
+                : { color: timedEventListTextColor(event.color, resolvedTheme === 'dark') }
               }
             >
               {event.allDay ? event.title : `• ${format(event.startTime, 'h:mm')} ${event.title}`}

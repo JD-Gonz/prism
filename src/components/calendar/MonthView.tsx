@@ -16,7 +16,8 @@ import {
 } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useWidgetBgOverride } from '@/components/widgets/WidgetContainer';
-import { hexToRgba } from '@/lib/utils/color';
+import { hexToRgba, timedEventListTextColor } from '@/lib/utils/color';
+import { useTheme } from '@/components/providers/ThemeProvider';
 import { useWeekStartsOn } from '@/lib/hooks/useWeekStartsOn';
 import { DAYS_SHORT_ARRAY } from '@/lib/constants/days';
 import type { CalendarEvent } from '@/types/calendar';
@@ -44,6 +45,7 @@ export function MonthView({
   onDateClick,
   bordered = true,
 }: MonthViewProps) {
+  const { resolvedTheme } = useTheme();
   const { weekStartsOn } = useWeekStartsOn();
   const bgOverride = useWidgetBgOverride();
   const transparentMode = bgOverride?.hasCustomBg === true;
@@ -146,7 +148,7 @@ export function MonthView({
                     )}
                     style={event.allDay
                       ? { backgroundColor: event.color, color: '#fff', borderLeft: `2px solid ${event.color}` }
-                      : { color: event.color }
+                      : { color: timedEventListTextColor(event.color, resolvedTheme === 'dark') }
                     }
                   >
                     {event.allDay ? event.title : `• ${format(event.startTime, 'h:mm a')} ${event.title}`}

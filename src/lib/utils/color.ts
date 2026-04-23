@@ -121,3 +121,41 @@ export function hslToHex(hsl: string): string {
 
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }
+
+/**
+ * Normalizes a calendar accent to `#RRGGBB`. Non-hex values fall back to a default.
+ */
+export function normalizeHexColor(input: string | undefined, fallback = '#3B82F6'): string {
+  if (!input || typeof input !== 'string') return fallback;
+  let s = input.trim();
+  if (!s.startsWith('#')) s = `#${s}`;
+  if (s.length === 4) {
+    const m = s.match(/^#([0-9A-Fa-f])([0-9A-Fa-f])([0-9A-Fa-f])$/i);
+    if (m) {
+      s = `#${m[1]}${m[1]}${m[2]}${m[2]}${m[3]}${m[3]}`;
+    }
+  }
+  if (!/^#[0-9A-Fa-f]{6}$/i.test(s)) return fallback;
+  return s.toLowerCase();
+}
+
+const TIMED_EVENT_LUMINANCE_FLOOR = 0.38;
+
+/**
+ * Text color for timed (non–all-day) events in compact grid rows (month / multi-week / etc.).
+ * Google calendar colors are often dark blues that read well on white but fail on `bg-card` in dark mode;
+ * this lifts lightness while preserving hue.
+ */
+export function timedEventListTextColor(accent: string, isDark: boolean): string {
+  const hex = normalizeHexColor(accent);
+  if (!isDark) return hex;
+  if (relativeLuminance(hex) >= TIMED_EVENT_LUMINANCE_FLOOR) return hex;
+  const hslStr = hexToHslValues(hex);
+  const m = hslStr.match(/(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)%\s+(\d+(?:\.\d+)?)%/);
+  if (!m) return '#93C5FD';
+  const h = m[1];
+  const s = m[2];
+  const currentL = parseFloat(m[3]);
+  const newL = Math.min(82, Math.max(currentL, 68));
+  return hslToHex(`${h} ${s}% ${newL}%`);
+}
